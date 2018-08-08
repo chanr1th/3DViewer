@@ -1,4 +1,5 @@
 ﻿using SFB;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -8,9 +9,19 @@ public partial class Controller
     [SerializeField]
     private Transform lightParent;
 
+    [SerializeField]
+    private Material lineMat;
+
+    [SerializeField]
+    private Color color;
+
     private Transform cameraTransform;
     private Vector3 deltaMousePosition;
     private Vector3 lastMousePosition;
+    private MeshRenderer meshRenderer;
+    private Transform modelTransform;
+    private bool enableVertices;
+    private List<Vector3> vertices;
 }
 
 public partial class Controller : MonoBehaviour
@@ -19,6 +30,9 @@ public partial class Controller : MonoBehaviour
     {
         cameraTransform = Camera.main.transform;
         lastMousePosition = Input.mousePosition;
+        enableVertices = false;
+        vertices = new List<Vector3>();
+
     }
 
     private void Update()
@@ -41,6 +55,25 @@ public partial class Controller : MonoBehaviour
         cameraTransform.LookAt(Vector3.zero);
         lastMousePosition = Input.mousePosition;
     }
+
+    private void OnRenderObject()
+    {
+        if (enableVertices)
+        {
+            for (int i = 0; i < vertices.Count - 1; i++)
+            {
+                Vector3 from = modelTransform.TransformPoint(vertices[i]);
+                Vector3 to = modelTransform.TransformPoint(vertices[i + 1]);
+
+                GL.Begin(GL.LINES);
+                lineMat.SetPass(0);
+                GL.Color(new Color(lineMat.color.r, lineMat.color.g, lineMat.color.b, lineMat.color.a));
+                GL.Vertex3(from.x, from.y, from.z);
+                GL.Vertex3(to.x, to.y, to.z);
+                GL.End();
+            }
+        }
+    }
 }
 
 public partial class Controller
@@ -54,11 +87,15 @@ public partial class Controller
             if (files.Length > 0) {
                 if (model != null) Destroy(model);
                 model = OBJLoader.LoadOBJFile(files[0]);
-                MeshRenderer meshRenderer = model.GetComponentInChildren<MeshRenderer>();
+                modelTransform = model.transform;
+
+                meshRenderer = model.GetComponentInChildren<MeshRenderer>();
                 if (meshRenderer != null) {
-                    Vector3 position = model.transform.position;
+                    Vector3 position = modelTransform.position;
                     position.y = meshRenderer.bounds.extents.y;
-                    model.transform.position = position;
+                    modelTransform.position = position;
+
+                    model.GetComponentInChildren<MeshFilter>().mesh.GetVertices(vertices);
                 }
             }
 
@@ -102,24 +139,14 @@ public partial class Controller
             model.transform.position += Vector3.forward * 0.3f;
     }
 
-    //public void OnMoveDownClicked()
-    //{
-    //    model.transform.position += Vector3.down * 10.0f;
-    //}
-    //public void OnMoveLeftClicked(string st)
-    //{
-    //    model.transform.position += Vector3.left * 10.0f;
-    //}
-    //public void OnMoveRightClicked()
-    //{
-    //    model.transform.position += Vector3.right * 10.0f;
-    //}
-    //public void OnMoveBackwardClicked()
-    //{
-    //    model.transform.position += Vector3.backward * 10.0f;
-    //}
-    //public void OnMoveForwardClicked()
-    //{
-    //    model.transform.position += Vector3.forward * 10.0f;
-    //}
+    public void OnShow3DOject(bool isOn)
+    {
+        if (meshRenderer == null) return;
+        meshRenderer.enabled = isOn;
+    }
+
+    public void OnEnableVertices(bool isOn)
+    {
+        enableVertices = isOn;
+    }
 }
