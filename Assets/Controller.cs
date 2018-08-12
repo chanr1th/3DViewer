@@ -102,6 +102,25 @@ public partial class Controller
         });
     }
 
+    public void OnSpecularColorClicked()
+    {
+        if (meshRenderer == null) return;
+        foreach (Material material in meshRenderer.materials)
+        {
+            material.SetColor("_SpecColor", Color.red);
+        }
+    }
+
+    public void OnMainColorClicked()
+    {
+        if (meshRenderer == null) return;
+        foreach (Material material in meshRenderer.materials)
+        {
+            // material.SetColor("_Color", color);
+            material.SetColor("_Color", Color.green);
+        }
+    }
+
     public void OnZoomInClicked()
     {
         model.transform.localScale += new Vector3(0.1f, 0.1f, 0.1f);
